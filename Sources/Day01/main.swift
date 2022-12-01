@@ -31,8 +31,8 @@ func part1() -> Int {
 
 print("Part 1: \(part1())")
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    return elves.compactMap { $0.sum() }.sorted().reversed()[0 ... 2].sum()
+}
 
-// print("Part 2: \(part2())")
+print("Part 2: \(part2())")
