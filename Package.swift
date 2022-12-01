@@ -16,5 +16,10 @@ let package = Package(
             name: "Utils",
             dependencies: []
         ),
+        .executableTarget(
+            name: "Day01",
+            dependencies: ["Utils"],
+            resources: [.process("input.txt"), .process("test.txt")]
+        ),
     ]
 )
