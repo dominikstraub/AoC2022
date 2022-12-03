@@ -1,11 +1,5 @@
 import Foundation
 
-public func getInput(bundle: Bundle, file: String = "input") throws -> String {
-    let inputFile = bundle.url(forResource: file, withExtension: "txt")!
-    let input = try String(contentsOf: inputFile, encoding: .utf8)
-    return input
-}
-
 public extension StringProtocol {
     subscript(_ offset: Int) -> Element { self[index(startIndex, offsetBy: offset)] }
     subscript(_ range: Range<Int>) -> SubSequence { prefix(range.lowerBound + range.count).suffix(range.count) }
@@ -15,10 +9,8 @@ public extension StringProtocol {
     subscript(_ range: PartialRangeFrom<Int>) -> SubSequence { suffix(Swift.max(0, count - range.lowerBound)) }
 
     func contains(_ elements: Set<Character>) -> Bool {
-        for element in elements {
-            if !contains(element) {
-                return false
-            }
+        for element in elements where !contains(element) {
+            return false
         }
         return true
     }
@@ -55,9 +47,9 @@ public extension BidirectionalCollection {
     subscript(safe offset: Int) -> Element? {
         guard !isEmpty,
               offset >= 0,
-              let i = index(startIndex, offsetBy: offset, limitedBy: index(before: endIndex))
+              let index = index(startIndex, offsetBy: offset, limitedBy: index(before: endIndex))
         else { return nil }
-        return self[i]
+        return self[index]
     }
 }
 
@@ -110,8 +102,11 @@ public extension RangeReplaceableCollection where Self: StringProtocol {
 public extension Array {
     subscript(safe range: Range<Index>) -> ArraySlice<Element>? {
         if range.endIndex > endIndex {
-            if range.startIndex >= endIndex { return nil }
-            else { return self[range.startIndex ..< endIndex] }
+            if range.startIndex >= endIndex {
+                return nil
+            } else {
+                return self[range.startIndex ..< endIndex]
+            }
         } else {
             return self[range]
         }

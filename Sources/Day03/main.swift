@@ -1,17 +1,21 @@
 import Foundation
 import Utils
 
-// let input = try Utils.getInput(bundle: Bundle.module, file: "test")
+// let input =  try Utils.getInput(bundle: Bundle.module, file: "test")
 let input = try Utils.getInput(bundle: Bundle.module)
 
-let lines = input
-    .components(separatedBy: CharacterSet(charactersIn: "\n"))
-    .compactMap { line -> String? in
-        if line == "" {
-            return nil
+func prepare() -> [String] {
+    return input
+        .components(separatedBy: CharacterSet(charactersIn: "\n"))
+        .compactMap { line -> String? in
+            if line == "" {
+                return nil
+            }
+            return line
         }
-        return line
-    }
+}
+
+let lines = run(part: "Input parsing", closure: prepare)
 
 func part1() -> Int {
     return lines.map { line in
@@ -40,7 +44,7 @@ func part1() -> Int {
     }.sum()
 }
 
-print("Part 1: \(part1())")
+_ = run(part: 1, closure: part1)
 
 func part2() -> Int {
     var result = 0
@@ -72,4 +76,4 @@ func part2() -> Int {
     return result
 }
 
-print("Part 2: \(part2())")
+_ = run(part: 2, closure: part2)
