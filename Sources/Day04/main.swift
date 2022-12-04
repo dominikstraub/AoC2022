@@ -37,8 +37,10 @@ func part1() -> Int {
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    return pairs.filter { pair -> Bool in
+        pair[0][0] <= pair[1][1] && pair[0][1] >= pair[1][0] || pair[1][0] <= pair[0][1] && pair[1][1] >= pair[0][0]
+    }.count
+}
 
-// _ = run(part: 2, closure: part2)
+_ = run(part: 2, closure: part2)
