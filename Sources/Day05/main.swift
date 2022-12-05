@@ -52,27 +52,28 @@ func prepare() -> (stacks: [[String?]], instructions: [(count: Int, src: Int, ds
 }
 
 let parts = run(part: "Input parsing", closure: prepare)
-var (stacks, instructions) = parts
+let (stacksOrig, instructions) = parts
 
 func part1() -> String {
-    print(instructions: instructions)
-    print(stacks: stacks)
+    var stacks = stacksOrig
+    // print(instructions: instructions)
+    // print(stacks: stacks)
     for instruction in instructions {
-        print(instruction: instruction)
+        // print(instruction: instruction)
         for _ in 0 ..< instruction.count {
             src: for srcHeight in 0 ..< stacks.count {
                 if let value = stacks[srcHeight][safe: instruction.src], let value = value {
-                    print("value: \(value)")
+                    // print("value: \(value)")
                     for dstHeight in (0 ..< stacks.count).reversed() {
                         guard let tmp = stacks[dstHeight][safe: instruction.dst], let _ = tmp else {
                             while stacks[safe: dstHeight]!.count <= instruction.dst {
                                 stacks[dstHeight].append(nil)
                             }
-                            print("src height: \(srcHeight), stack: \(instruction.src)")
-                            print("dst height: \(dstHeight), stack: \(instruction.dst)")
+                            // print("src height: \(srcHeight), stack: \(instruction.src)")
+                            // print("dst height: \(dstHeight), stack: \(instruction.dst)")
                             stacks[dstHeight][instruction.dst] = value
                             stacks[srcHeight][instruction.src] = nil
-                            print(stacks: stacks)
+                            // print(stacks: stacks)
                             break src
                         }
                     }
@@ -81,11 +82,11 @@ func part1() -> String {
                     while stacks[safe: dstHeight]!.count <= instruction.dst {
                         stacks[dstHeight].append(nil)
                     }
-                    print("src height: \(srcHeight), stack: \(instruction.src)")
-                    print("dst height: \(dstHeight - 1), stack: \(instruction.dst)")
+                    // print("src height: \(srcHeight), stack: \(instruction.src)")
+                    // print("dst height: \(dstHeight - 1), stack: \(instruction.dst)")
                     stacks[dstHeight][instruction.dst] = value
                     stacks[srcHeight + 1][instruction.src] = nil
-                    print(stacks: stacks)
+                    // print(stacks: stacks)
                     break src
                 }
             }
@@ -125,14 +126,62 @@ func print(instructions: [(count: Int, src: Int, dst: Int)]) {
     }
 }
 
-func print(instruction: (count: Int, src: Int, dst: Int)) {
+func print(instruction _: (count: Int, src: Int, dst: Int)) {
     print("move \(instruction.count) from \(instruction.src) to \(instruction.dst)")
 }
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> String {
+    var stacks = stacksOrig
+    // print(instructions: instructions)
+    // print(stacks: stacks)
+    for instruction in instructions {
+        // print(instruction: instruction)
+        for offset in (0 ..< instruction.count).reversed() {
+            src: for srcHeight in 0 ..< stacks.count {
+                if let tmp = stacks[srcHeight][safe: instruction.src], let _ = tmp, let value = stacks[srcHeight + offset][safe: instruction.src], let value = value {
+                    // print("value: \(value)")
+                    for dstHeight in (0 ..< stacks.count).reversed() {
+                        guard let tmp = stacks[dstHeight][safe: instruction.dst], let _ = tmp else {
+                            while stacks[safe: dstHeight]!.count <= instruction.dst {
+                                stacks[dstHeight].append(nil)
+                            }
+                            // print("src height: \(srcHeight + offset), stack: \(instruction.src)")
+                            // print("dst height: \(dstHeight), stack: \(instruction.dst)")
+                            stacks[dstHeight][instruction.dst] = value
+                            stacks[srcHeight + offset][instruction.src] = nil
+                            // print(stacks: stacks)
+                            break src
+                        }
+                    }
+                    stacks.insert([String?](), at: 0)
+                    let dstHeight = 0
+                    while stacks[safe: dstHeight]!.count <= instruction.dst {
+                        stacks[dstHeight].append(nil)
+                    }
+                    // print("src height: \(srcHeight + offset), stack: \(instruction.src)")
+                    // print("dst height: \(dstHeight - 1), stack: \(instruction.dst)")
+                    stacks[dstHeight][instruction.dst] = value
+                    stacks[srcHeight + offset + 1][instruction.src] = nil
+                    // print(stacks: stacks)
+                    break src
+                }
+            }
+        }
+    }
 
-// _ = run(part: 2, closure: part2)
+    var result = ""
+    for stack in 0 ..< stacks[stacks.count - 1].count {
+        for srcHeight in 0 ..< stacks.count {
+            if let value = stacks[srcHeight][safe: stack], let value = value {
+                result.append(value)
+                break
+            }
+        }
+    }
+
+    return result
+}
+
+_ = run(part: 2, closure: part2)
