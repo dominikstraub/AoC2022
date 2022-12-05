@@ -18,7 +18,7 @@ func prepare() -> (stacks: [[String?]], instructions: [(count: Int, src: Int, ds
             if line == "" {
                 return nil
             }
-            let pattern = "((\\[([A-Z])\\])| {3})"
+            let pattern = "((\\[([A-Z])\\] ?)| {3,4})"
             let regex = try? NSRegularExpression(pattern: pattern)
             guard let matches = regex?.matches(in: line, options: [], range: NSRange(location: 0, length: line.utf8.count)) else { return nil }
             var stackLine = [String?]()
