@@ -126,7 +126,7 @@ func print(instructions: [(count: Int, src: Int, dst: Int)]) {
     }
 }
 
-func print(instruction _: (count: Int, src: Int, dst: Int)) {
+func print(instruction: (count: Int, src: Int, dst: Int)) {
     print("move \(instruction.count) from \(instruction.src) to \(instruction.dst)")
 }
 
