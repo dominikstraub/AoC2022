@@ -36,8 +36,13 @@ let package = Package(
         //     dependencies: ["Utils"],
         //     resources: [.process("input.txt"), .process("test.txt")]
         // ),
+        // .executableTarget(
+        //     name: "Day05",
+        //     dependencies: ["Utils"],
+        //     resources: [.process("input.txt"), .process("test.txt")]
+        // ),
         .executableTarget(
-            name: "Day05",
+            name: "Day06",
             dependencies: ["Utils"],
             resources: [.process("input.txt"), .process("test.txt")]
         ),
