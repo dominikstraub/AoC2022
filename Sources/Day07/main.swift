@@ -17,15 +17,24 @@ func prepare() -> [String] {
 
 let lines = run(part: "Input parsing", closure: prepare)
 
+class Ref<T> {
+    var val: T
+
+    init(_ val: T) {
+        self.val = val
+    }
+}
+
 enum FsObject {
     case file(Int)
-    case dir([String: FsObject])
+    case dir([String: Ref<FsObject>])
 }
 
 func part1() -> Int {
-    var fs = [String: FsObject]()
-    var currentDir = &fs
+    let fs = Ref(FsObject.dir([String: Ref<FsObject>]()))
+    var currentDir = fs
     for line in lines {
+        print("line: \(line)")
         let parts = line.components(separatedBy: CharacterSet(charactersIn: " "))
         if parts[0] == "$" {
             // cmd
@@ -35,12 +44,12 @@ func part1() -> Int {
                 case "/":
                     currentDir = fs
                 case "..":
-                    if case let .dir(dir) = currentDir[".."] {
-                        currentDir = dir
+                    if case let .dir(dir) = currentDir.val {
+                        currentDir = dir[".."]!
                     }
                 default:
-                    if case let .dir(dir) = currentDir[parts[2]] {
-                        currentDir = dir
+                    if case let .dir(dir) = currentDir.val {
+                        currentDir = dir[parts[2]]!
                     }
                 }
             case "ls":
@@ -53,16 +62,40 @@ func part1() -> Int {
             // result
             if parts[0] == "dir" {
                 // dir
-                var newDir = [String: FsObject]()
-                newDir[".."] = FsObject.dir(currentDir)
-                currentDir[parts[1]] = FsObject.dir(newDir)
+                var newDir = [String: Ref<FsObject>]()
+                newDir[".."] = currentDir
+                if case var .dir(dir) = currentDir.val {
+                    dir[parts[1]] = Ref(FsObject.dir(newDir))
+                }
             } else {
                 // file
-                currentDir[parts[1]] = FsObject.file(Int(parts[0]) ?? -1)
+                if case var .dir(dir) = currentDir.val {
+                    dir[parts[1]] = Ref(FsObject.file(Int(parts[0]) ?? -1))
+                }
+            }
+        }
+        print(fs: fs)
+        print()
+        print()
+    }
+    return -1
+}
+
+func print(fs: Ref<FsObject>, indent: String = "") {
+    if case let .dir(dir) = fs.val {
+        for (name, fsObject) in dir {
+            switch fsObject.val {
+            case .dir(_):
+                if name == ".." {
+                    continue
+                }
+                print("\(indent)\(name)")
+                print(fs: fsObject, indent: "\(indent)  ")
+            case let .file(size):
+                print("\(indent)\(name) \(size)")
             }
         }
     }
-    return -1
 }
 
 _ = run(part: 1, closure: part1)
