@@ -66,11 +66,14 @@ func part1() -> Int {
                 newDir[".."] = currentDir
                 if case var .dir(dir) = currentDir.val {
                     dir[parts[1]] = Ref(FsObject.dir(newDir))
+                    currentDir = Ref(FsObject.dir(dir))
+                    
                 }
             } else {
                 // file
                 if case var .dir(dir) = currentDir.val {
                     dir[parts[1]] = Ref(FsObject.file(Int(parts[0]) ?? -1))
+                    currentDir = Ref(FsObject.dir(dir))
                 }
             }
         }
@@ -85,7 +88,7 @@ func print(fs: Ref<FsObject>, indent: String = "") {
     if case let .dir(dir) = fs.val {
         for (name, fsObject) in dir {
             switch fsObject.val {
-            case .dir(_):
+            case .dir:
                 if name == ".." {
                     continue
                 }
