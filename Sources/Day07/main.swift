@@ -51,6 +51,17 @@ class FsObject: CustomStringConvertible {
         return totalSize
     }
 
+    var dirSizes: [Int] {
+        var dirSizes = [Int]()
+        if case .dir = type {
+            dirSizes.append(size)
+            for (_, fsObject) in subObjects! {
+                dirSizes += fsObject.dirSizes
+            }
+        }
+        return dirSizes
+    }
+
     init(name: String, fileSize: Int) {
         self.name = name
         self.fileSize = fileSize
@@ -82,11 +93,12 @@ enum FsObjectType {
     case dir
 }
 
+let rootDir = FsObject(name: "/")
+
 func part1() -> Int {
-    let rootDir = FsObject(name: "/")
     var currentDir = rootDir
     for line in lines {
-        print("line: \(line)")
+        // print("line: \(line)")
         let parts = line.components(separatedBy: CharacterSet(charactersIn: " "))
         if parts[0] == "$" {
             // cmd
@@ -119,17 +131,28 @@ func part1() -> Int {
                 currentDir.subObjects![parts[1]] = newFile
             }
         }
-        print(rootDir)
-        print()
-        print()
+        // print(rootDir)
+        // print()
+        // print()
     }
     return rootDir.totalSizeLessThanMaxSizeWithSugarOnTop
 }
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    let totalDiskSpace = 70_000_000
+    let freeSpaceNeeded = 30_000_000
+    let currentUsedSpace = rootDir.size
+    let currentFreeSpace = totalDiskSpace - currentUsedSpace
+    let additionalSpaceNeeded = freeSpaceNeeded - currentFreeSpace
 
-// _ = run(part: 2, closure: part2)
+    let dirSizes = rootDir.dirSizes.sorted()
+    for dirSize in dirSizes where dirSize >= additionalSpaceNeeded {
+        return dirSize
+    }
+
+    return -1
+}
+
+_ = run(part: 2, closure: part2)
