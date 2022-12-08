@@ -1,8 +1,8 @@
 import Foundation
 import Utils
 
-let input = try Utils.getInput(bundle: Bundle.module, file: "test")
-// let input = try Utils.getInput(bundle: Bundle.module)
+// let input = try Utils.getInput(bundle: Bundle.module, file: "test")
+let input = try Utils.getInput(bundle: Bundle.module)
 
 func prepare() -> [String] {
     return input
@@ -17,14 +17,74 @@ func prepare() -> [String] {
 
 let lines = run(part: "Input parsing", closure: prepare)
 
-enum FsObject {
-    case file(Int)
-    case dir([String: Ref<FsObject>])
+class FsObject: CustomStringConvertible {
+    var fileSize: Int?
+    var name: String
+    var subObjects: [String: FsObject]?
+    var type: FsObjectType
+    var parent: FsObject?
+
+    var size: Int {
+        if case .file = type, let fileSize {
+            return fileSize
+        } else if case .dir = type, let subObjects {
+            return subObjects.map { $0.value.size }.sum()
+        } else {
+            return -1
+        }
+    }
+
+    var description: String {
+        return toString()
+    }
+
+    var totalSizeLessThanMaxSizeWithSugarOnTop: Int {
+        var totalSize = 0
+        if case .dir = type {
+            if size <= 100_000 {
+                totalSize += size
+            }
+            for (_, fsObject) in subObjects! {
+                totalSize += fsObject.totalSizeLessThanMaxSizeWithSugarOnTop
+            }
+        }
+        return totalSize
+    }
+
+    init(name: String, fileSize: Int) {
+        self.name = name
+        self.fileSize = fileSize
+        type = FsObjectType.file
+    }
+
+    init(name: String, subObjects: [String: FsObject] = [String: FsObject]()) {
+        self.name = name
+        self.subObjects = subObjects
+        type = FsObjectType.dir
+    }
+
+    func toString(indent: String = "") -> String {
+        var description = "\(indent)\(name) \(size)\n"
+        switch type {
+        case .dir:
+            for (_, fsObject) in subObjects! {
+                description += fsObject.toString(indent: "\(indent)  ")
+            }
+        case .file:
+            break
+        }
+        return description
+    }
+}
+
+enum FsObjectType {
+    case file
+    case dir
 }
 
 func part1() -> Int {
-    let fs = Ref(FsObject.dir([String: Ref<FsObject>]()))
-    var currentDir = fs
+    let rootDir = FsObject(name: "/")
+    var currentDir = rootDir
     for line in lines {
         print("line: \(line)")
         let parts = line.components(separatedBy: CharacterSet(charactersIn: " "))
@@ -34,15 +94,11 @@ func part1() -> Int {
             case "cd":
                 switch parts[2] {
                 case "/":
-                    currentDir = fs
+                    currentDir = rootDir
                 case "..":
-                    if case let .dir(dir) = currentDir.val {
-                        currentDir = dir[".."]!
-                    }
+                    currentDir = currentDir.parent!
                 default:
-                    if case let .dir(dir) = currentDir.val {
-                        currentDir = dir[parts[2]]!
-                    }
+                    currentDir = currentDir.subObjects![parts[2]]!
                 }
             case "ls":
                 //
@@ -54,42 +110,20 @@ func part1() -> Int {
             // result
             if parts[0] == "dir" {
                 // dir
-                var newDir = [String: Ref<FsObject>]()
-                newDir[".."] = currentDir
-                if case var .dir(dir) = currentDir.val {
-                    dir[parts[1]] = Ref(FsObject.dir(newDir))
-                    currentDir = Ref(FsObject.dir(dir))
-                }
+                let newDir = FsObject(name: parts[1])
+                newDir.parent = currentDir
+                currentDir.subObjects![parts[1]] = newDir
             } else {
                 // file
-                if case var .dir(dir) = currentDir.val {
-                    dir[parts[1]] = Ref(FsObject.file(Int(parts[0]) ?? -1))
-                    currentDir = Ref(FsObject.dir(dir))
-                }
+                let newFile = FsObject(name: parts[1], fileSize: Int(parts[0]) ?? -1)
+                currentDir.subObjects![parts[1]] = newFile
             }
         }
-        print(fs: fs)
+        print(rootDir)
         print()
         print()
     }
-    return -1
-}
-
-func print(fs: Ref<FsObject>, indent: String = "") {
-    if case let .dir(dir) = fs.val {
-        for (name, fsObject) in dir {
-            switch fsObject.val {
-            case .dir:
-                if name == ".." {
-                    continue
-                }
-                print("\(indent)\(name)")
-                print(fs: fsObject, indent: "\(indent)  ")
-            case let .file(size):
-                print("\(indent)\(name) \(size)")
-            }
-        }
-    }
+    return rootDir.totalSizeLessThanMaxSizeWithSugarOnTop
 }
 
 _ = run(part: 1, closure: part1)
