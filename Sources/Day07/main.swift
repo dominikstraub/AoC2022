@@ -17,14 +17,6 @@ func prepare() -> [String] {
 
 let lines = run(part: "Input parsing", closure: prepare)
 
-class Ref<T> {
-    var val: T
-
-    init(_ val: T) {
-        self.val = val
-    }
-}
-
 enum FsObject {
     case file(Int)
     case dir([String: Ref<FsObject>])
@@ -67,7 +59,6 @@ func part1() -> Int {
                 if case var .dir(dir) = currentDir.val {
                     dir[parts[1]] = Ref(FsObject.dir(newDir))
                     currentDir = Ref(FsObject.dir(dir))
-                    
                 }
             } else {
                 // file

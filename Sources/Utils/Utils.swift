@@ -112,3 +112,11 @@ public extension Array {
         }
     }
 }
+
+public class Ref<T> {
+    public var val: T
+
+    public init(_ val: T) {
+        self.val = val
+    }
+}
