@@ -23,9 +23,11 @@ let grid = run(part: "Input parsing", closure: prepare)
 func part1() -> Int {
     var visibleCount = (grid.count + grid[0].count - 2) * 2
     for currentY in 1 ..< grid.count - 1 {
+        let row = grid[currentY]
         for currentX in 1 ..< grid[0].count - 1 {
+            let tree = row[currentX]
             var visible = true
-            for y in 0 ..< currentY where grid[y][currentX] >= grid[currentY][currentX] {
+            for y in 0 ..< currentY where grid[y][currentX] >= tree {
                 visible = false
                 break
             }
@@ -35,7 +37,7 @@ func part1() -> Int {
             } else {
                 visible = true
             }
-            for y in currentY + 1 ..< grid.count where grid[y][currentX] >= grid[currentY][currentX] {
+            for y in currentY + 1 ..< grid.count where grid[y][currentX] >= tree {
                 visible = false
                 break
             }
@@ -45,7 +47,7 @@ func part1() -> Int {
             } else {
                 visible = true
             }
-            for x in 0 ..< currentX where grid[currentY][x] >= grid[currentY][currentX] {
+            for x in 0 ..< currentX where row[x] >= tree {
                 visible = false
                 break
             }
@@ -55,7 +57,7 @@ func part1() -> Int {
             } else {
                 visible = true
             }
-            for x in currentX + 1 ..< grid.count where grid[currentY][x] >= grid[currentY][currentX] {
+            for x in currentX + 1 ..< grid.count where row[x] >= tree {
                 visible = false
                 break
             }
