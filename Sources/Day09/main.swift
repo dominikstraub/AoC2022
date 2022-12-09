@@ -32,20 +32,21 @@ func simulateRope(length: Int = 2) -> Int {
     tailPositions.insert(rope[length - 1])
     for instruction in instructions {
         // print(instruction)
-        for _ in 0 ..< instruction.steps {
-            switch instruction.direction {
-            case "U":
-                rope[0].y += 1
-            case "R":
-                rope[0].x += 1
-            case "D":
-                rope[0].y -= 1
-            case "L":
-                rope[0].x -= 1
-            default:
-                break
-            }
-            for i in 0 ..< length - 1 {
+        switch instruction.direction {
+        case "U":
+            rope[0].y += instruction.steps
+        case "R":
+            rope[0].x += instruction.steps
+        case "D":
+            rope[0].y -= instruction.steps
+        case "L":
+            rope[0].x -= instruction.steps
+        default:
+            break
+        }
+        var changeI = 0
+        while changeI <= rope.count - 2 {
+            for i in changeI ..< length - 1 {
                 if abs(rope[i].x - rope[i + 1].x) > 1 || abs(rope[i].y - rope[i + 1].y) > 1 {
                     if rope[i].x > rope[i + 1].x {
                         rope[i + 1].x += min(rope[i].x - rope[i + 1].x, 1)
@@ -57,9 +58,15 @@ func simulateRope(length: Int = 2) -> Int {
                     } else {
                         rope[i + 1].y += max(rope[i].y - rope[i + 1].y, -1)
                     }
+                } else {
+                    if i == changeI {
+                        changeI += 1
+                    }
+                }
+                if i == length - 2 {
+                    tailPositions.insert(rope[length - 1])
                 }
             }
-            tailPositions.insert(rope[length - 1])
         }
         // print(rope: rope)
         // print(rope[length - 1])
