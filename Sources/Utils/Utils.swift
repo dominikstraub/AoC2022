@@ -120,3 +120,39 @@ public class Ref<T> {
         self.val = val
     }
 }
+
+public extension Ref where T: CustomStringConvertible {
+    var description: String {
+        return "\(val.description)"
+    }
+}
+
+public struct Point: CustomStringConvertible {
+    public var x: Int
+    public var y: Int
+
+    public init(x: Int, y: Int) {
+        self.x = x
+        self.y = y
+    }
+
+    public init(_ x: Int, _ y: Int) {
+        self.x = x
+        self.y = y
+    }
+
+    public var description: String {
+        return "(\(x), \(y))"
+    }
+}
+
+extension Point: Hashable {
+    public static func == (lhs: Point, rhs: Point) -> Bool {
+        return lhs.x == rhs.x && lhs.y == rhs.y
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(x)
+        hasher.combine(y)
+    }
+}
