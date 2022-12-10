@@ -49,8 +49,42 @@ func part1() -> Int {
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    var cycle = 0
+    var x = 1
+    print("")
+    print("")
+    print("")
+    for instruction in instructions {
+        var cyclesLeft = 0
+        var incrementLeft = 0
+        switch instruction.0 {
+        case "addx":
+            incrementLeft += instruction.1!
+            cyclesLeft += 2
+        case "noop":
+            cyclesLeft += 1
+        default:
+            return -1
+        }
+        for _ in 0 ..< cyclesLeft {
+            if cycle == x - 1 || cycle == x || cycle == x + 1 {
+                print("█", terminator: "")
+            } else {
+                print(" ", terminator: "")
+            }
+            cycle += 1
+            if cycle % 40 == 0 {
+                print("")
+                cycle = 0
+            }
+        }
+        x += incrementLeft
+    }
+    print("")
+    print("")
+    print("")
+    return -1
+}
 
-// _ = run(part: 2, closure: part2)
+_ = run(part: 2, closure: part2)
