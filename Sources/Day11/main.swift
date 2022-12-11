@@ -73,7 +73,7 @@ func prepare() -> [Monkey] {
         }
 }
 
-let monkeys = run(part: "Input parsing", closure: prepare)
+var monkeys = run(part: "Input parsing", closure: prepare)
 
 class Monkey {
     let number: Int
@@ -133,8 +133,48 @@ func part1() -> Int {
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+monkeys = run(part: "Input parsing", closure: prepare)
 
-// _ = run(part: 2, closure: part2)
+func part2() -> Int {
+    // may be not lowest (lcd), but it should work (german: kgv)
+    let lcd = monkeys.map { $0.test }.product()
+    for roundIndex in 0 ..< 10000 {
+        for (monkeyIndex, monkey) in monkeys.enumerated() {
+            // print("Monkey \(monkeyIndex):")
+            while monkey.items.count > 0 {
+                var item = monkey.items[0]
+                // print("  Monkey inspects an item with a worry level of \(item).")
+                monkey.inspectionCount += 1
+                // item = monkey.operation(item) / 3
+                item = monkey.operation(item)
+                item %= Int(lcd)
+                // print("    Worry level to \(item).")
+                // item /= 3
+                // print("    Monkey gets bored with item. Worry level is divided by 3 to \(item).")
+                if item % monkey.test == 0 {
+                    // print("    Current worry level is divisible by \(monkey.test).")
+                    // print("    Item with worry level \(item) is thrown to monkey \(monkey.trueMonkey).")
+                    monkeys[monkey.trueMonkey].items.append(item)
+                } else {
+                    // print("    Current worry level is not divisible by \(monkey.test).")
+                    // print("    Item with worry level \(item) is thrown to monkey \(monkey.falseMonkey).")
+                    monkeys[monkey.falseMonkey].items.append(item)
+                }
+                monkey.items.removeFirst()
+            }
+        }
+        if roundIndex == 0 || roundIndex == 19 || (roundIndex + 1) % 1000 == 0 {
+            print("== After round \(roundIndex + 1) ==")
+            for (monkeyIndex, monkey) in monkeys.enumerated() {
+                print("Monkey \(monkeyIndex) inspected items \(monkey.inspectionCount) times.")
+            }
+            print()
+        }
+    }
+    for (monkeyIndex, monkey) in monkeys.enumerated() {
+        // print("Monkey \(monkeyIndex) inspected items \(monkey.inspectionCount) times.")
+    }
+    return monkeys.map { $0.inspectionCount }.sorted().reversed()[0 ..< 2].product()
+}
+
+_ = run(part: 2, closure: part2)
