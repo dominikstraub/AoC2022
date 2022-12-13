@@ -1,8 +1,9 @@
 import Foundation
+import OrderedCollections
 import Utils
 
-let input = try Utils.getInput(bundle: Bundle.module, file: "test")
-// let input = try Utils.getInput(bundle: Bundle.module)
+// let input = try Utils.getInput(bundle: Bundle.module, file: "test")
+let input = try Utils.getInput(bundle: Bundle.module)
 
 func prepare() -> [[Square]] {
     return input
@@ -44,7 +45,7 @@ class Square {
     let end: Bool
     let height: Int
     var visited = false
-    var shortestDistance: Int?
+    var shortestDistance = Int.max
     var shortestPoint: Point?
 
     init(start: Bool, end: Bool, height: Int) {
@@ -53,6 +54,8 @@ class Square {
         self.height = height
     }
 }
+
+var pointsToCheck = OrderedSet<Point>()
 
 func part1() -> Int {
     var startPoint: Point?
@@ -66,84 +69,59 @@ func part1() -> Int {
                 startPoint = point
             } else if square.end {
                 square.shortestDistance = 0
-                square.visited = true
                 endPoint = point
-            }
+                pointsToCheck.insert(point, at: 0)
+            } else {}
         }
     }
     guard let startPoint, let endPoint else { return -1 }
-    var squaresToCheck = getUnvisitedNeighbours(point: endPoint)
-    while !squaresToCheck.isEmpty {
-        let point = squaresToCheck[0]
-        squaresToCheck.removeFirst()
-        squaresToCheck += checkSquare(point: point)
+    while !pointsToCheck.isEmpty {
+        let point = pointsToCheck.first!
+        pointsToCheck.removeFirst()
+        checkPoint(point: point)
     }
 
-    var path = [Point]()
-    var next = grid[startPoint]!.shortestPoint
-    print("\(next!) \(grid[next!]!.height)")
-    while true {
-        path.append(next!)
-        next = grid[next!]!.shortestPoint
-        if next == nil {
-            break
-        }
-        print("\(next!) \(grid[next!]!.height)")
-    }
+    // var path = [Point]()
+    // var next = grid[startPoint]!.shortestPoint
+    // print("\(next!) \(grid[next!]!.height)")
+    // while true {
+    //     path.append(next!)
+    //     next = grid[next!]!.shortestPoint
+    //     if next == nil {
+    //         break
+    //     }
+    //     print("\(next!) \(grid[next!]!.height)")
+    // }
 
-    for (lineIndex, line) in lines.enumerated() {
-        for (squareIndex, _) in line.enumerated() {
-            let point = Point(squareIndex, lineIndex)
-            if path.contains(point) {
-                print("█", terminator: "")
-            } else {
-                print(" ", terminator: "")
-            }
-        }
-        print()
-    }
+    // for (lineIndex, line) in lines.enumerated() {
+    //     for (squareIndex, _) in line.enumerated() {
+    //         let point = Point(squareIndex, lineIndex)
+    //         if path.contains(point) {
+    //             print("█", terminator: "")
+    //         } else {
+    //             print(" ", terminator: "")
+    //         }
+    //     }
+    //     print()
+    // }
 
-    return grid[startPoint]!.shortestDistance!
+    return grid[startPoint]!.shortestDistance
 }
 
-func checkSquare(point: Point) -> [Point] {
+func checkPoint(point: Point) {
     let square = grid[point]!
     if square.visited {
-        return []
+        return
     }
-    print("\(point)", terminator: "")
-    let climableNeighbours = getClimableNeighbours(point: point)
-    let sortedNeighbours = climableNeighbours.sorted { grid[$0]!.shortestDistance ?? Int.max < grid[$1]!.shortestDistance ?? Int.max }
-//    let mappedNeighbours = sortedNeighbours.map { grid[$0]! }
-    guard let firstNeighbours = sortedNeighbours.first else { print(); square.visited = true; return [] }
-    let neighbourSquare = grid[firstNeighbours]!
-    guard let shortestDistance = neighbourSquare.shortestDistance else { print(); return [] }
-    if shortestDistance < square.shortestDistance ?? Int.max {
-        square.shortestDistance = shortestDistance + 1
-    }
-    square.shortestPoint = firstNeighbours
-    print(" \(square.shortestDistance ?? -1)")
-    square.visited = true
-    return getNeighbours(point: point).filter {
-        let tmpSquare = grid[$0]!
-        if tmpSquare.height >= square.height - 1 {
-            tmpSquare.visited = false
-            return true
-        } else if !tmpSquare.visited {
-            return true
-        } else {
-            return false
+    for neighbourPoint in getNeighbours(point: point) {
+        let neighbourSquare = grid[neighbourPoint]!
+        if neighbourSquare.shortestDistance - 1 > square.shortestDistance {
+            neighbourSquare.shortestDistance = square.shortestDistance + 1
+            neighbourSquare.shortestPoint = point
         }
+        pointsToCheck.insert(neighbourPoint, at: pointsToCheck.count)
     }
-    // square.shortestDistance = (grid[getClimableNeighbours(point: point).sorted { grid[$0]!.height > grid[$1]!.height }.first!]?.shortestDistance)! + 1
-}
-
-func getClimableNeighbours(point: Point) -> [Point] {
-    return getNeighbours(point: point).filter { grid[$0]!.height <= grid[point]!.height + 1 }
-}
-
-func getUnvisitedNeighbours(point: Point) -> [Point] {
-    return getNeighbours(point: point).filter { !grid[$0]!.visited }
+    square.visited = true
 }
 
 func getNeighbours(point: Point) -> [Point] {
@@ -156,7 +134,14 @@ func getNeighbours(point: Point) -> [Point] {
         // Point(point.x - 1, point.y + 1),
         Point(point.x, point.y + 1),
         // Point(point.x + 1, point.y + 1),
-    ].filter { !($0.x < 0 || $0.y < 0 || $0.x >= lines[0].count || $0.y >= lines.count) }
+    ].filter {
+        // point inside grid
+        !($0.x < 0 || $0.y < 0 || $0.x >= lines[0].count || $0.y >= lines.count) &&
+            // points climable from
+            grid[$0]!.height >= grid[point]!.height - 1 &&
+            // point unvisited
+            !grid[$0]!.visited
+    }
 }
 
 _ = run(part: 1, closure: part1)
