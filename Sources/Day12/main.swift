@@ -38,8 +38,6 @@ func prepare() -> [[Square]] {
 
 let lines = run(part: "Input parsing", closure: prepare)
 
-var grid = [Point: Square]()
-
 class Square {
     let start: Bool
     let end: Bool
@@ -55,65 +53,22 @@ class Square {
     }
 }
 
-var pointsToCheck = OrderedSet<Point>()
-
-func part1() -> Int {
-    var startPoint: Point?
-    var endPoint: Point?
-    // find S & E
-    for (lineIndex, line) in lines.enumerated() {
-        for (squareIndex, square) in line.enumerated() {
-            let point = Point(squareIndex, lineIndex)
-            grid[point] = square
-            if square.start {
-                startPoint = point
-            } else if square.end {
-                square.shortestDistance = 0
-                endPoint = point
-                pointsToCheck.insert(point, at: 0)
-            } else {}
-        }
-    }
-    guard let startPoint, let endPoint else { return -1 }
+func findPathTo(endPoint: Point, inGrid grid: inout [Point: Square], withPointsToCheck pointsToCheck: inout OrderedSet<Point>) -> Int {
     while !pointsToCheck.isEmpty {
         let point = pointsToCheck.first!
         pointsToCheck.removeFirst()
-        checkPoint(point: point)
+        checkPoint(point, inGrid: &grid, withPointsToCheck: &pointsToCheck)
     }
 
-    // var path = [Point]()
-    // var next = grid[startPoint]!.shortestPoint
-    // print("\(next!) \(grid[next!]!.height)")
-    // while true {
-    //     path.append(next!)
-    //     next = grid[next!]!.shortestPoint
-    //     if next == nil {
-    //         break
-    //     }
-    //     print("\(next!) \(grid[next!]!.height)")
-    // }
-
-    // for (lineIndex, line) in lines.enumerated() {
-    //     for (squareIndex, _) in line.enumerated() {
-    //         let point = Point(squareIndex, lineIndex)
-    //         if path.contains(point) {
-    //             print("█", terminator: "")
-    //         } else {
-    //             print(" ", terminator: "")
-    //         }
-    //     }
-    //     print()
-    // }
-
-    return grid[startPoint]!.shortestDistance
+    return grid[endPoint]!.shortestDistance
 }
 
-func checkPoint(point: Point) {
+func checkPoint(_ point: Point, inGrid grid: inout [Point: Square], withPointsToCheck pointsToCheck: inout OrderedSet<Point>) {
     let square = grid[point]!
     if square.visited {
         return
     }
-    for neighbourPoint in getNeighbours(point: point) {
+    for neighbourPoint in getNeighboursOfPoint(point, inGrid: &grid) {
         let neighbourSquare = grid[neighbourPoint]!
         if neighbourSquare.shortestDistance - 1 > square.shortestDistance {
             neighbourSquare.shortestDistance = square.shortestDistance + 1
@@ -124,30 +79,116 @@ func checkPoint(point: Point) {
     square.visited = true
 }
 
-func getNeighbours(point: Point) -> [Point] {
+func getNeighboursOfPoint(_ point: Point, inGrid grid: inout [Point: Square]) -> [Point] {
     return [
-        // Point(point.x - 1, point.y - 1),
         Point(point.x, point.y - 1),
-        // Point(point.x + 1, point.y - 1),
         Point(point.x - 1, point.y),
         Point(point.x + 1, point.y),
-        // Point(point.x - 1, point.y + 1),
         Point(point.x, point.y + 1),
-        // Point(point.x + 1, point.y + 1),
     ].filter {
         // point inside grid
         !($0.x < 0 || $0.y < 0 || $0.x >= lines[0].count || $0.y >= lines.count) &&
-            // points climable from
-            grid[$0]!.height >= grid[point]!.height - 1 &&
+            // points climable
+            grid[$0]!.height <= grid[point]!.height + 1 &&
             // point unvisited
             !grid[$0]!.visited
     }
 }
 
+func part1() -> Int {
+    var grid = [Point: Square]()
+    var pointsToCheck = OrderedSet<Point>()
+    var endPoint: Point?
+    // find S & E
+    for (lineIndex, line) in lines.enumerated() {
+        for (squareIndex, square) in line.enumerated() {
+            let point = Point(squareIndex, lineIndex)
+            grid[point] = square
+            square.visited = false
+            square.shortestDistance = Int.max
+            square.shortestPoint = nil
+            if square.start {
+                square.shortestDistance = 0
+                pointsToCheck.insert(point, at: 0)
+            } else if square.end {
+                endPoint = point
+            }
+        }
+    }
+    let result = findPathTo(endPoint: endPoint!, inGrid: &grid, withPointsToCheck: &pointsToCheck)
+
+    var path = [Point]()
+    var next = grid[endPoint!]!.shortestPoint
+    while true {
+        path.append(next!)
+        next = grid[next!]!.shortestPoint
+        if next == nil {
+            break
+        }
+    }
+
+    for (lineIndex, line) in lines.enumerated() {
+        for (squareIndex, _) in line.enumerated() {
+            let point = Point(squareIndex, lineIndex)
+            if path.contains(point) {
+                print("█", terminator: "")
+            } else {
+                print(" ", terminator: "")
+            }
+        }
+        print()
+    }
+
+    return result
+}
+
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    var grid = [Point: Square]()
+    var pointsToCheck = OrderedSet<Point>()
+    var endPoint: Point?
+    // find S & E
+    for (lineIndex, line) in lines.enumerated() {
+        for (squareIndex, square) in line.enumerated() {
+            let point = Point(squareIndex, lineIndex)
+            grid[point] = square
+            square.visited = false
+            square.shortestDistance = Int.max
+            square.shortestPoint = nil
+            if square.height == 0 {
+                square.shortestDistance = 0
+                pointsToCheck.insert(point, at: 0)
+            } else if square.end {
+                endPoint = point
+            }
+        }
+    }
+    let result = findPathTo(endPoint: endPoint!, inGrid: &grid, withPointsToCheck: &pointsToCheck)
 
-// _ = run(part: 2, closure: part2)
+    var path = [Point]()
+    var next = grid[endPoint!]!.shortestPoint
+    while true {
+        path.append(next!)
+        next = grid[next!]!.shortestPoint
+        if next == nil {
+            break
+        }
+    }
+
+    for (lineIndex, line) in lines.enumerated() {
+        for (squareIndex, _) in line.enumerated() {
+            let point = Point(squareIndex, lineIndex)
+            if path.contains(point) {
+                print("█", terminator: "")
+            } else {
+                print(" ", terminator: "")
+            }
+        }
+        print()
+    }
+
+    return result
+}
+
+_ = run(part: 2, closure: part2)
