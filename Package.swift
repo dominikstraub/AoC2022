@@ -80,13 +80,28 @@ let package = Package(
         //     dependencies: ["Utils", .product(name: "Collections", package: "swift-collections")],
         //     resources: [.process("input.txt"), .process("test.txt")]
         // ),
+        // .executableTarget(
+        //     name: "Day13",
+        //     dependencies: ["Utils"],
+        //     resources: [.process("input.txt"), .process("test.txt")]
+        // ),
+        // .executableTarget(
+        //     name: "Day14",
+        //     dependencies: ["Utils"],
+        //     resources: [.process("input.txt"), .process("test.txt")]
+        // ),
+        // .executableTarget(
+        //     name: "Day15",
+        //     dependencies: ["Utils"],
+        //     resources: [.process("input.txt"), .process("test.txt")]
+        // ),
         .executableTarget(
-            name: "Day13",
+            name: "Day16",
             dependencies: ["Utils"],
             resources: [.process("input.txt"), .process("test.txt")]
         ),
         // .executableTarget(
-        //     name: "Day14",
+        //     name: "Day17",
         //     dependencies: ["Utils"],
         //     resources: [.process("input.txt"), .process("test.txt")]
         // ),
