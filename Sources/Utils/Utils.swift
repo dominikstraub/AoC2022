@@ -127,7 +127,7 @@ public extension Ref where T: CustomStringConvertible {
     }
 }
 
-public struct Point: CustomStringConvertible {
+public struct Point {
     public var x: Int
     public var y: Int
 
@@ -140,7 +140,9 @@ public struct Point: CustomStringConvertible {
         self.x = x
         self.y = y
     }
+}
 
+extension Point: CustomStringConvertible {
     public var description: String {
         return "(\(x), \(y))"
     }
