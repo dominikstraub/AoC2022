@@ -46,8 +46,12 @@ struct List {
                 charIndex += 1
                 break
             } else {
-                values.append(Value.integer(Int(String(string[charIndex]))!))
-                charIndex += 1
+                var length = 0
+                while String(string[charIndex + length]) != "," && String(string[charIndex + length]) != "]" {
+                    length += 1
+                }
+                values.append(Value.integer(Int(String(string[charIndex ..< charIndex + length]))!))
+                charIndex += length
             }
         }
         stringLength = charIndex
