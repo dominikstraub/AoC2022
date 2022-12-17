@@ -2,8 +2,8 @@ import Foundation
 import OrderedCollections
 import Utils
 
-// let input = try Utils.getInput(bundle: Bundle.module, file: "test")
-let input = try Utils.getInput(bundle: Bundle.module)
+let input = try Utils.getInput(bundle: Bundle.module, file: "test")
+// let input = try Utils.getInput(bundle: Bundle.module)
 
 func prepare() -> [Valve] {
     return input
@@ -137,7 +137,25 @@ for valve in valves {
     valvesMap[valve.label] = valve
 }
 
-func part1() -> Int {
+// func part1() -> Int {
+//     var graph = [String: Node<Valve>]()
+//     var nodesToCheck = OrderedSet<String>()
+//     for valve in valves {
+//         let node = Node(valve)
+//         graph[valve.label] = node
+//     }
+//     let startNode = graph["AA"]!
+//     startNode.pressure[MinutesLeftOpenValves(minutesLeft: 30, openedValves: [])] = 0
+//     nodesToCheck.insert(startNode.value.label, at: 0)
+
+//     let result = findMaxPath(inGraph: &graph, withNodesToCheck: &nodesToCheck)
+
+//     return result
+// }
+
+// _ = run(part: 1, closure: part1)
+
+func part2() -> Int {
     var graph = [String: Node<Valve>]()
     var nodesToCheck = OrderedSet<String>()
     for valve in valves {
@@ -145,18 +163,17 @@ func part1() -> Int {
         graph[valve.label] = node
     }
     let startNode = graph["AA"]!
-    startNode.pressure[MinutesLeftOpenValves(minutesLeft: 30, openedValves: [])] = 0
+    startNode.pressure[MinutesLeftOpenValves(minutesLeft: 26, openedValves: [])] = 0
     nodesToCheck.insert(startNode.value.label, at: 0)
 
+    print(findMaxPath(inGraph: &graph, withNodesToCheck: &nodesToCheck))
+    nodesToCheck.insert(startNode.value.label, at: 0)
+    for node in graph.values {
+        nodesToCheck.insert(node.value.label, at: nodesToCheck.count)
+    }
     let result = findMaxPath(inGraph: &graph, withNodesToCheck: &nodesToCheck)
 
     return result
 }
 
-_ = run(part: 1, closure: part1)
-
-// func part2() -> Int {
-//     return -1
-// }
-
-// _ = run(part: 2, closure: part2)
+_ = run(part: 2, closure: part2)
