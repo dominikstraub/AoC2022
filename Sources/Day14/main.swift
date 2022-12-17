@@ -132,8 +132,92 @@ func part1() -> Int {
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    var grid = [Point: Material]()
+    let source = Point(500, 0)
+    grid[source] = .source
+    var minX = 500
+    var maxX = 500
+    var minY = 0
+    var maxY = 0
+    for rock in rocks {
+        for index in 0 ..< rock.count - 1 {
+            let src = rock[index]
+            let dst = rock[index + 1]
+            let currentMinX = min(src.x, dst.x)
+            let currentMaxX = max(src.x, dst.x)
+            let currentMinY = min(src.y, dst.y)
+            let currentMaxY = max(src.y, dst.y)
+            if currentMinX < minX {
+                minX = currentMinX
+            }
+            if currentMaxX > maxX {
+                maxX = currentMaxX
+            }
+            if currentMinY < minY {
+                minY = currentMinY
+            }
+            if currentMaxY > maxY {
+                maxY = currentMaxY
+            }
+            for yIndex in currentMinY ... currentMaxY {
+                for xIndex in currentMinX ... currentMaxX {
+                    let point = Point(xIndex, yIndex)
+                    grid[point] = .rock
+                }
+            }
+        }
+    }
 
-// _ = run(part: 2, closure: part2)
+    var sandCount = 0
+
+    sand: while true {
+        var newSand = source
+        falling: while true {
+            if newSand.y == maxY + 1 {
+                break falling
+            }
+            if grid[Point(newSand.x, newSand.y + 1)] ?? .air == .air {
+                newSand.y += 1
+                continue falling
+            }
+            if grid[Point(newSand.x - 1, newSand.y + 1)] ?? .air == .air {
+                newSand.y += 1
+                newSand.x -= 1
+                continue falling
+            }
+            if grid[Point(newSand.x + 1, newSand.y + 1)] ?? .air == .air {
+                newSand.y += 1
+                newSand.x += 1
+                continue falling
+            }
+            break falling
+        }
+        grid[newSand] = .sand
+        sandCount += 1
+
+        if newSand.x < minX {
+            minX = newSand.x
+        }
+        if newSand.x > maxX {
+            maxX = newSand.x
+        }
+        if newSand == source {
+            break sand
+        }
+    }
+
+    maxY += 2
+
+    for yIndex in minY ... maxY {
+        for xIndex in minX ... maxX {
+            let point = Point(xIndex, yIndex)
+            print(grid[point] ?? .air, terminator: "")
+        }
+        print("")
+    }
+
+    return sandCount
+}
+
+_ = run(part: 2, closure: part2)
