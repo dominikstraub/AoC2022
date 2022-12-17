@@ -149,12 +149,20 @@ extension Point: CustomStringConvertible {
 }
 
 extension Point: Hashable {
-    public static func == (lhs: Point, rhs: Point) -> Bool {
-        return lhs.x == rhs.x && lhs.y == rhs.y
-    }
-
     public func hash(into hasher: inout Hasher) {
         hasher.combine(x)
         hasher.combine(y)
+    }
+}
+
+extension Point: Equatable {
+    public static func == (lhs: Point, rhs: Point) -> Bool {
+        return lhs.x == rhs.x && lhs.y == rhs.y
+    }
+}
+
+extension Point: Comparable {
+    public static func < (lhs: Point, rhs: Point) -> Bool {
+        return lhs.x < rhs.x || lhs.y < rhs.y
     }
 }
