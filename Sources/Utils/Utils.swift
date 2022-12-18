@@ -130,15 +130,66 @@ public extension Ref where T: CustomStringConvertible {
 public struct Point {
     public var x: Int
     public var y: Int
+}
 
-    public init(x: Int, y: Int) {
+public extension Point {
+    // init(x: Int, y: Int) {
+    //     self.x = x
+    //     self.y = y
+    // }
+
+    init(y: Int, x: Int) {
         self.x = x
         self.y = y
     }
 
-    public init(_ x: Int, _ y: Int) {
+    init(coord0: Int, coord1: Int) {
+        x = coord0
+        y = coord1
+    }
+
+    init(_ x: Int, _ y: Int) {
         self.x = x
         self.y = y
+    }
+
+    init(array: [Int]) {
+        x = array[0]
+        y = array[1]
+    }
+
+    init(_ array: [Int]) {
+        x = array[0]
+        y = array[1]
+    }
+}
+
+public extension Point {
+    var array: [Int] {
+        get {
+            [x, y]
+        }
+        set(newValue) {
+            x = newValue[0]
+            y = newValue[1]
+        }
+    }
+
+    subscript(_ dimension: Int) -> Int {
+        get {
+            array[dimension]
+        }
+        set(newValue) {
+            array[dimension] = newValue
+        }
+    }
+
+    var coord0: Int {
+        return x
+    }
+
+    var coord1: Int {
+        return y
     }
 }
 
@@ -164,5 +215,97 @@ extension Point: Equatable {
 extension Point: Comparable {
     public static func < (lhs: Point, rhs: Point) -> Bool {
         return lhs.x < rhs.x || lhs.y < rhs.y
+    }
+}
+
+public struct Point3D {
+    public var x: Int
+    public var y: Int
+    public var z: Int
+}
+
+public extension Point3D {
+//    init(x: Int, y: Int, z: Int) {
+//        self.x = x
+//        self.y = y
+//        self.z = z
+//    }
+
+    init(_ x: Int, _ y: Int, _ z: Int) {
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+
+    init(array: [Int]) {
+        x = array[0]
+        y = array[1]
+        z = array[2]
+    }
+
+    init(_ array: [Int]) {
+        x = array[0]
+        y = array[1]
+        z = array[2]
+    }
+}
+
+public extension Point3D {
+    var array: [Int] {
+        get {
+            [x, y, z]
+        }
+        set(newValue) {
+            x = newValue[0]
+            y = newValue[1]
+            z = newValue[2]
+        }
+    }
+
+    subscript(_ dimension: Int) -> Int {
+        get {
+            array[dimension]
+        }
+        set(newValue) {
+            array[dimension] = newValue
+        }
+    }
+
+    var coord0: Int {
+        return x
+    }
+
+    var coord1: Int {
+        return y
+    }
+
+    var coord2: Int {
+        return z
+    }
+}
+
+extension Point3D: CustomStringConvertible {
+    public var description: String {
+        return "(\(x), \(y), \(z))"
+    }
+}
+
+extension Point3D: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(x)
+        hasher.combine(y)
+        hasher.combine(z)
+    }
+}
+
+extension Point3D: Equatable {
+    public static func == (lhs: Point3D, rhs: Point3D) -> Bool {
+        return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
+    }
+}
+
+extension Point3D: Comparable {
+    public static func < (lhs: Point3D, rhs: Point3D) -> Bool {
+        return lhs.x < rhs.x || lhs.y < rhs.y || lhs.z < rhs.z
     }
 }
