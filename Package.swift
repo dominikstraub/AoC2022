@@ -85,16 +85,16 @@ let package = Package(
         //     dependencies: ["Utils"],
         //     resources: [.process("input.txt"), .process("test.txt")]
         // ),
-        .executableTarget(
-            name: "Day14",
-            dependencies: ["Utils"],
-            resources: [.process("input.txt"), .process("test.txt")]
-        ),
         // .executableTarget(
-        //     name: "Day15",
+        //     name: "Day14",
         //     dependencies: ["Utils"],
         //     resources: [.process("input.txt"), .process("test.txt")]
         // ),
+        .executableTarget(
+            name: "Day15",
+            dependencies: ["Utils"],
+            resources: [.process("input.txt"), .process("test.txt")]
+        ),
         // .executableTarget(
         //     name: "Day16",
         //     dependencies: ["Utils", .product(name: "Collections", package: "swift-collections")],
