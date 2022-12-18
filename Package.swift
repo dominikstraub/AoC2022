@@ -48,7 +48,7 @@ let package = Package(
         // .executableTarget(
         //     name: "Day06",
         //     dependencies: ["Utils"],
-        //     resources: [.process("input.txt"), .process("test.txt")]
+        //     resources: [.process("input.txt"), .process("test.txt"), .process("test2.txt"), .process("test3.txt"), .process("test4.txt"), .process("test5.txt")]
         // ),
         // .executableTarget(
         //     name: "Day07",

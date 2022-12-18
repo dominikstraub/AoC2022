@@ -75,32 +75,32 @@ func part1() -> Int {
     // let row = 10
     let row = 2_000_000
 
-    for line in lines {
-        grid[line.sensor] = .sensor
-        grid[line.beacon] = .beacon
+    for (sensor, beacon) in lines {
+        grid[sensor] = .sensor
+        grid[beacon] = .beacon
 
-        minX = min(minX, line.sensor.x, line.beacon.x)
-        maxX = max(maxX, line.sensor.x, line.beacon.x)
-        // minY = min(minY, line.sensor.y, line.beacon.y)
-        // maxY = max(maxY, line.sensor.y, line.beacon.y)
+        minX = min(minX, sensor.x, beacon.x)
+        maxX = max(maxX, sensor.x, beacon.x)
+        // minY = min(minY, sensor.y, beacon.y)
+        // maxY = max(maxY, sensor.y, beacon.y)
 
-        let dist = max(line.sensor.x, line.beacon.x) - min(line.sensor.x, line.beacon.x) +
-            max(line.sensor.y, line.beacon.y) - min(line.sensor.y, line.beacon.y)
+        let dist = max(sensor.x, beacon.x) - min(sensor.x, beacon.x) +
+            max(sensor.y, beacon.y) - min(sensor.y, beacon.y)
 
         for offsetY in -dist ... dist {
-            let y = line.sensor.y + offsetY
+            let y = sensor.y + offsetY
             if y != row {
                 continue
             }
             let remainder = dist - abs(offsetY)
             for offsetX in -remainder ... remainder {
-                let point = Point(line.sensor.x + offsetX, line.sensor.y + offsetY)
+                let point = Point(sensor.x + offsetX, sensor.y + offsetY)
                 if grid[point] == nil {
                     grid[point] = .noBeacon
-                    minX = min(minX, point.x, point.x)
-                    maxX = max(maxX, point.x, point.x)
-                    // minY = min(minY, point.y, point.y)
-                    // maxY = max(maxY, point.y, point.y)
+                    minX = min(minX, point.x)
+                    maxX = max(maxX, point.x)
+                    // minY = min(minY, point.y)
+                    // maxY = max(maxY, point.y)
                 }
             }
         }

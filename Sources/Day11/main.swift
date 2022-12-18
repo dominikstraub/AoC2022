@@ -96,8 +96,8 @@ class Monkey {
 }
 
 func part1() -> Int {
-    for roundIndex in 0 ..< 20 {
-        for (monkeyIndex, monkey) in monkeys.enumerated() {
+    for _ in 0 ..< 20 {
+        for  monkey in monkeys {
             // print("Monkey \(monkeyIndex):")
             while monkey.items.count > 0 {
                 var item = monkey.items[0]
@@ -121,13 +121,13 @@ func part1() -> Int {
             }
         }
         // print("After round \(roundIndex + 1), the monkeys are holding items with these worry levels:")
-        for (monkeyIndex, monkey) in monkeys.enumerated() {
-            // print("Monkey \(monkeyIndex): \(monkey.items)")
-        }
+//        for (monkeyIndex, monkey) in monkeys.enumerated() {
+//             print("Monkey \(monkeyIndex): \(monkey.items)")
+//        }
     }
-    for (monkeyIndex, monkey) in monkeys.enumerated() {
-        // print("Monkey \(monkeyIndex) inspected items \(monkey.inspectionCount) times.")
-    }
+//    for (monkeyIndex, monkey) in monkeys.enumerated() {
+//         print("Monkey \(monkeyIndex) inspected items \(monkey.inspectionCount) times.")
+//    }
     return monkeys.map { $0.inspectionCount }.sorted().reversed()[0 ..< 2].product()
 }
 
@@ -139,7 +139,7 @@ func part2() -> Int {
     // may be not lowest (lcd), but it should work (german: kgv)
     let lcd = monkeys.map { $0.test }.product()
     for roundIndex in 0 ..< 10000 {
-        for (monkeyIndex, monkey) in monkeys.enumerated() {
+        for  monkey in monkeys {
             // print("Monkey \(monkeyIndex):")
             while monkey.items.count > 0 {
                 var item = monkey.items[0]
@@ -171,9 +171,9 @@ func part2() -> Int {
             print()
         }
     }
-    for (monkeyIndex, monkey) in monkeys.enumerated() {
-        // print("Monkey \(monkeyIndex) inspected items \(monkey.inspectionCount) times.")
-    }
+//    for (monkeyIndex, monkey) in monkeys.enumerated() {
+//         print("Monkey \(monkeyIndex) inspected items \(monkey.inspectionCount) times.")
+//    }
     return monkeys.map { $0.inspectionCount }.sorted().reversed()[0 ..< 2].product()
 }
 
