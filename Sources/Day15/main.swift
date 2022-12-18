@@ -64,7 +64,7 @@ extension Position: CustomStringConvertible {
 }
 
 func part1() -> Int {
-    print(lines)
+    // print(lines)
     var grid = [Point: Position]()
 
     var minX = Int.max
@@ -138,8 +138,42 @@ func part1() -> Int {
 
 _ = run(part: 1, closure: part1)
 
-// func part2() -> Int {
-//     return -1
-// }
+func part2() -> Int {
+    let minX = 0
+    // let maxX = 20
+    let maxX = 4_000_000
+    let minY = 0
+    // let maxY = 20
+    let maxY = 4_000_000
 
-// _ = run(part: 2, closure: part2)
+    for (sensor, beacon) in lines {
+        let sensorRange = max(sensor.x, beacon.x) - min(sensor.x, beacon.x) +
+            max(sensor.y, beacon.y) - min(sensor.y, beacon.y)
+
+        search: for offsetX in 0 ... sensorRange + 1 {
+            let offsetY = sensorRange + 1 - offsetX
+            let x = sensor.x + offsetX
+            let y = sensor.y + offsetY
+            if x < minX || x > maxX || y < minY || y > maxY {
+                continue
+            }
+
+            for (sensor2, beacon2) in lines {
+                let sensor2Range = max(sensor2.x, beacon2.x) - min(sensor2.x, beacon2.x) +
+                    max(sensor2.y, beacon2.y) - min(sensor2.y, beacon2.y)
+
+                let dist = max(x, sensor2.x) - min(x, sensor2.x) +
+                    max(y, sensor2.y) - min(y, sensor2.y)
+
+                if dist <= sensor2Range {
+                    continue search
+                }
+            }
+            return x * 4_000_000 + y
+        }
+    }
+
+    return -1
+}
+
+_ = run(part: 2, closure: part2)
