@@ -1,4 +1,5 @@
 import Foundation
+import OrderedCollections
 import Utils
 
 let input = try Utils.getInput(bundle: Bundle.module, file: "test")
@@ -101,6 +102,89 @@ extension Blueprint: CustomStringConvertible {
     }
 }
 
+// #########################
+
+struct State {
+    let minutesLeft: Int
+    let materials: [Material: Int]
+    let robots: [Material: Int]
+}
+
+extension State: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(minutesLeft)
+        hasher.combine(materials)
+        hasher.combine(robots)
+    }
+}
+
+class Node {
+    var value = Set<State>()
+}
+
+func findMaxPath(inGraph graph: [Material?: Node], blueprint: Blueprint) -> Int {
+    var nodesToCheck = OrderedSet<Material?>()
+    nodesToCheck.insert(nil, at: 0)
+    while !nodesToCheck.isEmpty {
+        let node = graph[nodesToCheck.first!]!
+        nodesToCheck.removeFirst()
+        checkNode(node, inGraph: graph, withNodesToCheck: &nodesToCheck, blueprint: blueprint)
+    }
+
+    var maxGeodes = Int.min
+    for node in graph.values {
+        for state in node.value where state.materials[.geode]! > maxGeodes {
+            maxGeodes = state.materials[.geode]!
+        }
+    }
+
+    return maxGeodes
+}
+
+func checkNode(_ node: Node, inGraph graph: [Material?: Node], withNodesToCheck nodesToCheck: inout OrderedSet<Material?>, blueprint: Blueprint) {
+    for state in node.value {
+        let minutesLeft = state.minutesLeft
+        if minutesLeft >= 0 {
+            let materials = state.materials
+            for buildableRobot in getNeighboursOfNode(materials: materials, blueprint: blueprint) {
+                var materials = state.materials
+                var robots = state.robots
+
+                for (material, ammount) in robots {
+                    materials[material]! += ammount
+                }
+
+                buildRobot(buildableRobot, &materials, &robots, blueprint)
+
+                let key = State(minutesLeft: minutesLeft - 1, materials: materials, robots: robots)
+                let neighbourNode = graph[buildableRobot]!
+                if !neighbourNode.value.contains(key) {
+                    neighbourNode.value.insert(key)
+                    nodesToCheck.insert(buildableRobot, at: nodesToCheck.count)
+                }
+            }
+        }
+    }
+}
+
+func getNeighboursOfNode(materials: [Material: Int], blueprint: Blueprint) -> [Material?] {
+    var neighbours = [Material?]()
+    neighbours.append(nil)
+    if canBuildRobot(.ore, materials, blueprint) {
+        neighbours.append(.ore)
+    }
+    if canBuildRobot(.clay, materials, blueprint) {
+        neighbours.append(.clay)
+    }
+    if canBuildRobot(.obsidian, materials, blueprint) {
+        neighbours.append(.obsidian)
+    }
+    if canBuildRobot(.geode, materials, blueprint) {
+        neighbours.append(.geode)
+    }
+    return neighbours
+}
+
 func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint: Blueprint) -> Bool {
     for ingedient in blueprint.recipes[robot]! {
         if materials[ingedient.material]! < ingedient.amount {
@@ -110,86 +194,19 @@ func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint:
     return true
 }
 
-func shouldBuildRobot(_ robot: Material, _ materials: [Material: Int], _ robots: [Material: Int], _: Int, _ blueprint: Blueprint) -> Bool {
-    var materials = materials
-    var builtMaterials = materials
-    var builtRobots = robots
-    for ingedient in blueprint.recipes[robot]! {
-        builtMaterials[ingedient.material]! -= ingedient.amount
-    }
-    builtRobots[robot]! += 1
-
-    for (robot, count) in robots {
-        builtMaterials[robot]! += count
-    }
-
-    for (robot, count) in robots {
-        materials[robot]! += count
-    }
-
-    let built = runSim(builtMaterials, builtRobots, 24, blueprint)
-    let notBuilt = runSim(materials, robots, 24, blueprint)
-
-    return built > notBuilt
-}
-
-func buildRobot(_ robot: Material, _ materials: inout [Material: Int], _ robots: inout [Material: Int], _ blueprint: Blueprint) {
-    print("Spend ", terminator: "")
+func buildRobot(_ robot: Material?, _ materials: inout [Material: Int], _ robots: inout [Material: Int], _ blueprint: Blueprint) {
+    guard let robot else { return }
+    // print("Spend ", terminator: "")
     for ingedient in blueprint.recipes[robot]! {
         materials[ingedient.material]! -= ingedient.amount
-        print("\(ingedient.amount) \(ingedient.material)", terminator: "")
+        // print("\(ingedient.amount) \(ingedient.material)", terminator: "")
     }
     robots[robot]! += 1
 
-    print(" to start building a \(robot)-cracking robot.")
-}
-
-func runSim(_ materials: [Material: Int], _ robots: [Material: Int], _ minutesLeft: Int, _ blueprint: Blueprint) -> Int {
-    var materials = materials
-    var robots = robots
-    for minutesLeft in (minutesLeft - 24 + 1 ... 24).reversed() {
-        print("== Minute \(24 + 1 - minutesLeft) ==")
-        defer {
-            for (robot, count) in robots {
-                materials[robot]! += count
-            }
-
-            for mat in mats {
-                print("\(robots[mat]!) \(mat)-collecting robot collects \(robots[mat]!) \(mat); you now have \(materials[mat]!) \(mat).")
-            }
-            print()
-        }
-        if canBuildRobot(.geode, materials, blueprint) {
-            if shouldBuildRobot(.geode, materials, robots, minutesLeft, blueprint) {
-                buildRobot(.geode, &materials, &robots, blueprint)
-                continue
-            }
-        }
-        if canBuildRobot(.obsidian, materials, blueprint) {
-            if shouldBuildRobot(.obsidian, materials, robots, minutesLeft, blueprint) {
-                buildRobot(.obsidian, &materials, &robots, blueprint)
-                continue
-            }
-        }
-        if canBuildRobot(.clay, materials, blueprint) {
-            if shouldBuildRobot(.clay, materials, robots, minutesLeft, blueprint) {
-                buildRobot(.clay, &materials, &robots, blueprint)
-                continue
-            }
-        }
-        if canBuildRobot(.ore, materials, blueprint) {
-            if shouldBuildRobot(.ore, materials, robots, minutesLeft, blueprint) {
-                buildRobot(.ore, &materials, &robots, blueprint)
-                continue
-            }
-        }
-    }
-
-    return materials[.geode]!
+    // print(" to start building a \(robot)-cracking robot.")
 }
 
 func part1() -> Int {
-    print(blueprints)
     var quality = 0
     for blueprint in blueprints {
         let materials: [Material: Int] = [
@@ -197,6 +214,7 @@ func part1() -> Int {
             .clay: 0,
             .obsidian: 0,
             .geode: 0,
+            // TODO: remove geode from materials and move to possible max value
         ]
         let robots: [Material: Int] = [
             .ore: 1,
@@ -204,7 +222,16 @@ func part1() -> Int {
             .obsidian: 0,
             .geode: 0,
         ]
-        let geodes = runSim(materials, robots, 24, blueprint)
+        var graph = [Material?: Node]()
+        graph[.ore] = Node()
+        graph[.clay] = Node()
+        graph[.obsidian] = Node()
+        graph[.geode] = Node()
+        graph[nil] = Node()
+        let startNode = graph[nil]!
+        startNode.value.insert(State(minutesLeft: 24, materials: materials, robots: robots))
+
+        let geodes = findMaxPath(inGraph: graph, blueprint: blueprint)
 
         quality += blueprint.id * geodes
         break
@@ -213,9 +240,3 @@ func part1() -> Int {
 }
 
 _ = run(part: 1, closure: part1)
-
-// func part2() -> Int {
-//     return -1
-// }
-
-// _ = run(part: 2, closure: part2)
