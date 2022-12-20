@@ -88,6 +88,7 @@ extension Material: CustomStringConvertible {
 
 typealias Recipe = [Ingredient]
 typealias Ingredient = (material: Material, amount: Int)
+let mats: [Material] = [.ore, .clay, .obsidian, .geode]
 
 struct Blueprint {
     let id: Int
@@ -100,61 +101,6 @@ extension Blueprint: CustomStringConvertible {
     }
 }
 
-func part1() -> Int {
-    print(blueprints)
-    var quality = 0
-    for blueprint in blueprints {
-        var materials: [Material: Int] = [
-            .ore: 0,
-            .clay: 0,
-            .obsidian: 0,
-            .geode: 0,
-        ]
-        var robots: [Material: Int] = [
-            .ore: 1,
-            .clay: 0,
-            .obsidian: 0,
-            .geode: 0,
-        ]
-        for minutesLeft in (1 ... 24).reversed() {
-            defer {
-                for (robot, count) in robots {
-                    materials[robot]! += count
-                }
-                print(materials)
-                print(robots)
-            }
-            if canBuildRobot(.geode, materials, blueprint) {
-                if shouldBuildRobot(.geode, &materials, &robots, minutesLeft, blueprint) {
-                    buildRobot(.geode, &materials, &robots, blueprint)
-                    continue
-                }
-            }
-            if canBuildRobot(.obsidian, materials, blueprint) {
-                if shouldBuildRobot(.obsidian, &materials, &robots, minutesLeft, blueprint) {
-                    buildRobot(.obsidian, &materials, &robots, blueprint)
-                    continue
-                }
-            }
-            if canBuildRobot(.clay, materials, blueprint) {
-                if shouldBuildRobot(.clay, &materials, &robots, minutesLeft, blueprint) {
-                    buildRobot(.clay, &materials, &robots, blueprint)
-                    continue
-                }
-            }
-            if canBuildRobot(.ore, materials, blueprint) {
-                if shouldBuildRobot(.ore, &materials, &robots, minutesLeft, blueprint) {
-                    buildRobot(.ore, &materials, &robots, blueprint)
-                    continue
-                }
-            }
-        }
-
-        quality += blueprint.id * materials[.geode]!
-    }
-    return quality
-}
-
 func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint: Blueprint) -> Bool {
     for ingedient in blueprint.recipes[robot]! {
         if materials[ingedient.material]! < ingedient.amount {
@@ -164,20 +110,106 @@ func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint:
     return true
 }
 
-func shouldBuildRobot(_ robot: Material, _ materials: inout [Material: Int], _ robots: inout [Material: Int], _ minutesLeft: Int, _ blueprint: Blueprint) -> Bool {
-    print(robot)
-    print(materials)
-    print(robots)
-    print(minutesLeft)
-    print(blueprint)
-    return true
+func shouldBuildRobot(_ robot: Material, _ materials: [Material: Int], _ robots: [Material: Int], _: Int, _ blueprint: Blueprint) -> Bool {
+    var materials = materials
+    var builtMaterials = materials
+    var builtRobots = robots
+    for ingedient in blueprint.recipes[robot]! {
+        builtMaterials[ingedient.material]! -= ingedient.amount
+    }
+    builtRobots[robot]! += 1
+
+    for (robot, count) in robots {
+        builtMaterials[robot]! += count
+    }
+
+    for (robot, count) in robots {
+        materials[robot]! += count
+    }
+
+    let built = runSim(builtMaterials, builtRobots, 24, blueprint)
+    let notBuilt = runSim(materials, robots, 24, blueprint)
+
+    return built > notBuilt
 }
 
 func buildRobot(_ robot: Material, _ materials: inout [Material: Int], _ robots: inout [Material: Int], _ blueprint: Blueprint) {
+    print("Spend ", terminator: "")
     for ingedient in blueprint.recipes[robot]! {
         materials[ingedient.material]! -= ingedient.amount
+        print("\(ingedient.amount) \(ingedient.material)", terminator: "")
     }
     robots[robot]! += 1
+
+    print(" to start building a \(robot)-cracking robot.")
+}
+
+func runSim(_ materials: [Material: Int], _ robots: [Material: Int], _ minutesLeft: Int, _ blueprint: Blueprint) -> Int {
+    var materials = materials
+    var robots = robots
+    for minutesLeft in (minutesLeft - 24 + 1 ... 24).reversed() {
+        print("== Minute \(24 + 1 - minutesLeft) ==")
+        defer {
+            for (robot, count) in robots {
+                materials[robot]! += count
+            }
+
+            for mat in mats {
+                print("\(robots[mat]!) \(mat)-collecting robot collects \(robots[mat]!) \(mat); you now have \(materials[mat]!) \(mat).")
+            }
+            print()
+        }
+        if canBuildRobot(.geode, materials, blueprint) {
+            if shouldBuildRobot(.geode, materials, robots, minutesLeft, blueprint) {
+                buildRobot(.geode, &materials, &robots, blueprint)
+                continue
+            }
+        }
+        if canBuildRobot(.obsidian, materials, blueprint) {
+            if shouldBuildRobot(.obsidian, materials, robots, minutesLeft, blueprint) {
+                buildRobot(.obsidian, &materials, &robots, blueprint)
+                continue
+            }
+        }
+        if canBuildRobot(.clay, materials, blueprint) {
+            if shouldBuildRobot(.clay, materials, robots, minutesLeft, blueprint) {
+                buildRobot(.clay, &materials, &robots, blueprint)
+                continue
+            }
+        }
+        if canBuildRobot(.ore, materials, blueprint) {
+            if shouldBuildRobot(.ore, materials, robots, minutesLeft, blueprint) {
+                buildRobot(.ore, &materials, &robots, blueprint)
+                continue
+            }
+        }
+    }
+
+    return materials[.geode]!
+}
+
+func part1() -> Int {
+    print(blueprints)
+    var quality = 0
+    for blueprint in blueprints {
+        let materials: [Material: Int] = [
+            .ore: 0,
+            .clay: 0,
+            .obsidian: 0,
+            .geode: 0,
+        ]
+        let robots: [Material: Int] = [
+            .ore: 1,
+            .clay: 0,
+            .obsidian: 0,
+            .geode: 0,
+        ]
+        let geodes = runSim(materials, robots, 24, blueprint)
+
+        quality += blueprint.id * geodes
+        break
+    }
+    return quality
 }
 
 _ = run(part: 1, closure: part1)
