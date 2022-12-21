@@ -49,15 +49,15 @@ func prepare() -> [Blueprint] {
             }
 
             return Blueprint(id: id!, recipes: [
-                .ore: [(material: .ore, amount: oreRobotOreCost!)],
-                .clay: [(material: .ore, amount: clayRobotOreCost!)],
+                .ore: [.ore: oreRobotOreCost!],
+                .clay: [.ore: clayRobotOreCost!],
                 .obsidian: [
-                    (material: .ore, amount: obsidianRobotOreCost!),
-                    (material: .clay, amount: obsidianRobotClayCost!),
+                    .ore: obsidianRobotOreCost!,
+                    .clay: obsidianRobotClayCost!,
                 ],
                 .geode: [
-                    (material: .ore, amount: geodeRobotOreCost!),
-                    (material: .obsidian, amount: geodeRobotobsidianCost!),
+                    .ore: geodeRobotOreCost!,
+                    .obsidian: geodeRobotobsidianCost!,
                 ],
             ])
         }
@@ -87,8 +87,7 @@ extension Material: CustomStringConvertible {
     }
 }
 
-typealias Recipe = [Ingredient]
-typealias Ingredient = (material: Material, amount: Int)
+typealias Recipe = [Material: Int]
 let mats: [Material] = [.ore, .clay, .obsidian, .geode]
 
 struct Blueprint {
@@ -118,58 +117,66 @@ extension State: Hashable {
     }
 }
 
-class Node {
-    var value = Set<State>()
+extension State: CustomStringConvertible {
+    public var description: String {
+        return "minutesLeft: \(minutesLeft), materials: \(materials), robots: \(robots)"
+    }
 }
 
-func findMaxPath(inGraph graph: [Material?: Node], blueprint: Blueprint) -> Int {
-    var nodesToCheck = OrderedSet<Material?>()
-    nodesToCheck.insert(nil, at: 0)
-    while !nodesToCheck.isEmpty {
-        let node = graph[nodesToCheck.first!]!
-        nodesToCheck.removeFirst()
-        checkNode(node, inGraph: graph, withNodesToCheck: &nodesToCheck, blueprint: blueprint)
+typealias States = Set<State>
+
+func findMaxPath(withStatesToCheck statesToCheck: inout States, blueprint: Blueprint) -> Int {
+    var states = States()
+    states.insert(statesToCheck.first!)
+
+    while !statesToCheck.isEmpty {
+        let state = statesToCheck.first!
+        statesToCheck.remove(state)
+        checkState(state, withStates: &states, andStatesToCheck: &statesToCheck, blueprint: blueprint)
     }
 
     var maxGeodes = Int.min
-    for node in graph.values {
-        for state in node.value where state.materials[.geode]! > maxGeodes {
-            maxGeodes = state.materials[.geode]!
-        }
+    for state in states where state.materials[.geode]! > maxGeodes {
+        maxGeodes = state.materials[.geode]!
     }
 
     return maxGeodes
 }
 
-func checkNode(_ node: Node, inGraph graph: [Material?: Node], withNodesToCheck nodesToCheck: inout OrderedSet<Material?>, blueprint: Blueprint) {
-    for state in node.value {
-        let minutesLeft = state.minutesLeft
-        if minutesLeft >= 0 {
-            let materials = state.materials
-            for buildableRobot in getNeighboursOfNode(materials: materials, blueprint: blueprint) {
-                var materials = state.materials
-                var robots = state.robots
+func checkState(_ state: State, withStates states: inout States, andStatesToCheck statesToCheck: inout States, blueprint: Blueprint) {
+    let minutesLeft = state.minutesLeft
+    guard minutesLeft >= 0 else { return }
+    let materials = state.materials
+    let robots = state.robots
+    let latestToBuildGeode = 5
+    guard
+        minutesLeft >= latestToBuildGeode || robots[.geode]! > 0 || (minutesLeft - latestToBuildGeode) * robots[.obsidian]! + materials[.obsidian]! >= blueprint.recipes[.geode]![.obsidian]!,
+        minutesLeft >= latestToBuildGeode + 1 || robots[.obsidian]! > 0 || (minutesLeft - latestToBuildGeode - 1) * robots[.clay]! + materials[.clay]! >= blueprint.recipes[.obsidian]![.clay]!,
+        minutesLeft >= latestToBuildGeode + 2 || robots[.clay]! > 0 || (minutesLeft - latestToBuildGeode - 2) * robots[.ore]! + materials[.ore]! >= blueprint.recipes[.clay]![.ore]!
+    else { return }
+    let buildableRobots = getBuildableRobots(materials: materials, blueprint: blueprint)
+    for buildableRobot in buildableRobots {
+        var materials = materials
+        var robots = robots
 
-                for (material, ammount) in robots {
-                    materials[material]! += ammount
-                }
+        for (material, amount) in robots {
+            materials[material]! += amount
+        }
 
-                buildRobot(buildableRobot, &materials, &robots, blueprint)
+        buildRobot(buildableRobot, &materials, &robots, blueprint)
 
-                let key = State(minutesLeft: minutesLeft - 1, materials: materials, robots: robots)
-                let neighbourNode = graph[buildableRobot]!
-                if !neighbourNode.value.contains(key) {
-                    neighbourNode.value.insert(key)
-                    nodesToCheck.insert(buildableRobot, at: nodesToCheck.count)
-                }
+        let key = State(minutesLeft: minutesLeft - 1, materials: materials, robots: robots)
+        if !states.contains(key) {
+            states.insert(key)
+            if key.minutesLeft >= 0 {
+                statesToCheck.insert(key)
             }
         }
     }
 }
 
-func getNeighboursOfNode(materials: [Material: Int], blueprint: Blueprint) -> [Material?] {
+func getBuildableRobots(materials: [Material: Int], blueprint: Blueprint) -> [Material?] {
     var neighbours = [Material?]()
-    neighbours.append(nil)
     if canBuildRobot(.ore, materials, blueprint) {
         neighbours.append(.ore)
     }
@@ -182,14 +189,15 @@ func getNeighboursOfNode(materials: [Material: Int], blueprint: Blueprint) -> [M
     if canBuildRobot(.geode, materials, blueprint) {
         neighbours.append(.geode)
     }
+    if neighbours.count < 4 {
+        neighbours.append(nil)
+    }
     return neighbours
 }
 
 func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint: Blueprint) -> Bool {
-    for ingedient in blueprint.recipes[robot]! {
-        if materials[ingedient.material]! < ingedient.amount {
-            return false
-        }
+    for (material, amount) in blueprint.recipes[robot]! where materials[material]! < amount {
+        return false
     }
     return true
 }
@@ -197,9 +205,9 @@ func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint:
 func buildRobot(_ robot: Material?, _ materials: inout [Material: Int], _ robots: inout [Material: Int], _ blueprint: Blueprint) {
     guard let robot else { return }
     // print("Spend ", terminator: "")
-    for ingedient in blueprint.recipes[robot]! {
-        materials[ingedient.material]! -= ingedient.amount
-        // print("\(ingedient.amount) \(ingedient.material)", terminator: "")
+    for (material, amount) in blueprint.recipes[robot]! {
+        materials[material]! -= amount
+        // print("\(amount) \(material)", terminator: "")
     }
     robots[robot]! += 1
 
@@ -214,7 +222,6 @@ func part1() -> Int {
             .clay: 0,
             .obsidian: 0,
             .geode: 0,
-            // TODO: remove geode from materials and move to possible max value
         ]
         let robots: [Material: Int] = [
             .ore: 1,
@@ -222,16 +229,11 @@ func part1() -> Int {
             .obsidian: 0,
             .geode: 0,
         ]
-        var graph = [Material?: Node]()
-        graph[.ore] = Node()
-        graph[.clay] = Node()
-        graph[.obsidian] = Node()
-        graph[.geode] = Node()
-        graph[nil] = Node()
-        let startNode = graph[nil]!
-        startNode.value.insert(State(minutesLeft: 24, materials: materials, robots: robots))
 
-        let geodes = findMaxPath(inGraph: graph, blueprint: blueprint)
+        var statesToCheck = States()
+        statesToCheck.insert(State(minutesLeft: 24, materials: materials, robots: robots))
+
+        let geodes = findMaxPath(withStatesToCheck: &statesToCheck, blueprint: blueprint)
 
         quality += blueprint.id * geodes
         break
