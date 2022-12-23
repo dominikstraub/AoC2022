@@ -137,6 +137,14 @@ func findMaxPath(withStatesToCheck statesToCheck: inout States, blueprint: Bluep
 
     var maxGeodes = Int.min
     for state in states where state.materials[.geode]! > maxGeodes {
+        print("minutesLeft \(state.minutesLeft)")
+        print("materials[.geode] \(state.materials[.geode]!)")
+        print("blueprint.id \(blueprint.id)")
+        print("quality \(blueprint.id * state.materials[.geode]!)")
+        print("materials \(state.materials)")
+        print("robots \(state.robots)")
+        print()
+
         maxGeodes = state.materials[.geode]!
     }
 
@@ -145,14 +153,14 @@ func findMaxPath(withStatesToCheck statesToCheck: inout States, blueprint: Bluep
 
 func checkState(_ state: State, withStates states: inout States, andStatesToCheck statesToCheck: inout States, blueprint: Blueprint) {
     let minutesLeft = state.minutesLeft
-    guard minutesLeft >= 0 else { return }
+    guard minutesLeft > 0 else { return }
     let materials = state.materials
     let robots = state.robots
     let latestToBuildGeode = 5
     guard
-        minutesLeft >= latestToBuildGeode || robots[.geode]! > 0 || (minutesLeft - latestToBuildGeode) * robots[.obsidian]! + materials[.obsidian]! >= blueprint.recipes[.geode]![.obsidian]!,
-        minutesLeft >= latestToBuildGeode + 1 || robots[.obsidian]! > 0 || (minutesLeft - latestToBuildGeode - 1) * robots[.clay]! + materials[.clay]! >= blueprint.recipes[.obsidian]![.clay]!,
-        minutesLeft >= latestToBuildGeode + 2 || robots[.clay]! > 0 || (minutesLeft - latestToBuildGeode - 2) * robots[.ore]! + materials[.ore]! >= blueprint.recipes[.clay]![.ore]!
+        minutesLeft - latestToBuildGeode >= 0 || canHaveAtLeastOneRobotInMinutes(robot: .geode, materials: materials, robots: robots, blueprint: blueprint, minutes: minutesLeft - latestToBuildGeode),
+        minutesLeft - latestToBuildGeode - 1 >= 0 || canHaveAtLeastOneRobotInMinutes(robot: .obsidian, materials: materials, robots: robots, blueprint: blueprint, minutes: minutesLeft - latestToBuildGeode - 1),
+        minutesLeft - latestToBuildGeode - 2 >= 0 || canHaveAtLeastOneRobotInMinutes(robot: .clay, materials: materials, robots: robots, blueprint: blueprint, minutes: minutesLeft - latestToBuildGeode - 2)
     else { return }
     let buildableRobots = getBuildableRobots(materials: materials, blueprint: blueprint)
     for buildableRobot in buildableRobots {
@@ -163,12 +171,12 @@ func checkState(_ state: State, withStates states: inout States, andStatesToChec
             materials[material]! += amount
         }
 
-        buildRobot(buildableRobot, &materials, &robots, blueprint)
+        buildRobot(robot: buildableRobot, materials: &materials, robots: &robots, blueprint: blueprint)
 
         let key = State(minutesLeft: minutesLeft - 1, materials: materials, robots: robots)
         if !states.contains(key) {
             states.insert(key)
-            if key.minutesLeft >= 0 {
+            if key.minutesLeft > 0 {
                 statesToCheck.insert(key)
             }
         }
@@ -177,16 +185,16 @@ func checkState(_ state: State, withStates states: inout States, andStatesToChec
 
 func getBuildableRobots(materials: [Material: Int], blueprint: Blueprint) -> [Material?] {
     var neighbours = [Material?]()
-    if canBuildRobot(.ore, materials, blueprint) {
+    if canBuildRobot(.ore, withMaterials: materials, blueprint: blueprint) {
         neighbours.append(.ore)
     }
-    if canBuildRobot(.clay, materials, blueprint) {
+    if canBuildRobot(.clay, withMaterials: materials, blueprint: blueprint) {
         neighbours.append(.clay)
     }
-    if canBuildRobot(.obsidian, materials, blueprint) {
+    if canBuildRobot(.obsidian, withMaterials: materials, blueprint: blueprint) {
         neighbours.append(.obsidian)
     }
-    if canBuildRobot(.geode, materials, blueprint) {
+    if canBuildRobot(.geode, withMaterials: materials, blueprint: blueprint) {
         neighbours.append(.geode)
     }
     if neighbours.count < 4 {
@@ -195,14 +203,29 @@ func getBuildableRobots(materials: [Material: Int], blueprint: Blueprint) -> [Ma
     return neighbours
 }
 
-func canBuildRobot(_ robot: Material, _ materials: [Material: Int], _ blueprint: Blueprint) -> Bool {
+func canHaveAtLeastOneRobotInMinutes(robot: Material, materials: [Material: Int], robots: [Material: Int], blueprint: Blueprint, minutes: Int) -> Bool {
+    return robots[robot]! > 0 || canBuildRobotInMinutes(robot: robot, materials: materials, robots: robots, blueprint: blueprint, minutes: minutes)
+}
+
+func canBuildRobotInMinutes(robot: Material, materials: [Material: Int], robots: [Material: Int], blueprint: Blueprint, minutes: Int) -> Bool {
+    var materials = materials
+    guard minutes >= 0 else { return false }
+    for _ in 0 ..< minutes {
+        for (material, amount) in robots {
+            materials[material]! += amount
+        }
+    }
+    return canBuildRobot(robot, withMaterials: materials, blueprint: blueprint)
+}
+
+func canBuildRobot(_ robot: Material, withMaterials materials: [Material: Int], blueprint: Blueprint) -> Bool {
     for (material, amount) in blueprint.recipes[robot]! where materials[material]! < amount {
         return false
     }
     return true
 }
 
-func buildRobot(_ robot: Material?, _ materials: inout [Material: Int], _ robots: inout [Material: Int], _ blueprint: Blueprint) {
+func buildRobot(robot: Material?, materials: inout [Material: Int], robots: inout [Material: Int], blueprint: Blueprint) {
     guard let robot else { return }
     // print("Spend ", terminator: "")
     for (material, amount) in blueprint.recipes[robot]! {
@@ -236,8 +259,8 @@ func part1() -> Int {
         let geodes = findMaxPath(withStatesToCheck: &statesToCheck, blueprint: blueprint)
 
         quality += blueprint.id * geodes
-        break
     }
+    print("total quality \(quality)")
     return quality
 }
 
