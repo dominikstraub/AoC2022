@@ -101,67 +101,69 @@ extension Blueprint: CustomStringConvertible {
     }
 }
 
-// #########################
-
-struct State {
-    let minutesLeft: Int
+struct StateKey {
     let materials: [Material: Int]
     let robots: [Material: Int]
 }
 
-extension State: Hashable {
+extension StateKey: Hashable {
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(minutesLeft)
         hasher.combine(materials)
         hasher.combine(robots)
     }
 }
 
-extension State: CustomStringConvertible {
+extension StateKey: CustomStringConvertible {
     public var description: String {
-        return "minutesLeft: \(minutesLeft), materials: \(materials), robots: \(robots)"
+        return "materials: \(materials), robots: \(robots)"
     }
 }
 
-typealias States = Set<State>
+typealias StateValue = [Int: Int]
+
+typealias State = Dictionary<StateKey, StateValue>.Element
+
+typealias States = [StateKey: StateValue]
 
 func findMaxPath(withStatesToCheck statesToCheck: inout States, blueprint: Blueprint) -> Int {
     var states = States()
-    states.insert(statesToCheck.first!)
+    let (key, value) = statesToCheck.first!
+    states[key] = value
 
     while !statesToCheck.isEmpty {
         let state = statesToCheck.first!
-        statesToCheck.remove(state)
+        let key = state.key
+        statesToCheck.removeValue(forKey: key)
         checkState(state, withStates: &states, andStatesToCheck: &statesToCheck, blueprint: blueprint)
     }
 
     var maxGeodes = Int.min
-    for state in states where state.materials[.geode]! > maxGeodes {
-        print("minutesLeft \(state.minutesLeft)")
-        print("materials[.geode] \(state.materials[.geode]!)")
-        print("blueprint.id \(blueprint.id)")
-        print("quality \(blueprint.id * state.materials[.geode]!)")
-        print("materials \(state.materials)")
-        print("robots \(state.robots)")
-        print()
 
-        maxGeodes = state.materials[.geode]!
+    print("states.count \(states.count)")
+    for (key, value) in states {
+        for (minutesLeft, geodes) in value {
+            if geodes > maxGeodes {
+                print("minutesLeft \(minutesLeft)")
+                print("value.geodes \(geodes)")
+                print("blueprint.id \(blueprint.id)")
+                print("quality \(blueprint.id * geodes)")
+                print("materials \(key.materials)")
+                print("robots \(key.robots)")
+                print()
+
+                maxGeodes = geodes
+            }
+        }
     }
-
     return maxGeodes
 }
 
 func checkState(_ state: State, withStates states: inout States, andStatesToCheck statesToCheck: inout States, blueprint: Blueprint) {
-    let minutesLeft = state.minutesLeft
-    guard minutesLeft > 0 else { return }
-    let materials = state.materials
-    let robots = state.robots
-    let latestToBuildGeode = 5
-    guard
-        minutesLeft - latestToBuildGeode >= 0 || canHaveAtLeastOneRobotInMinutes(robot: .geode, materials: materials, robots: robots, blueprint: blueprint, minutes: minutesLeft - latestToBuildGeode),
-        minutesLeft - latestToBuildGeode - 1 >= 0 || canHaveAtLeastOneRobotInMinutes(robot: .obsidian, materials: materials, robots: robots, blueprint: blueprint, minutes: minutesLeft - latestToBuildGeode - 1),
-        minutesLeft - latestToBuildGeode - 2 >= 0 || canHaveAtLeastOneRobotInMinutes(robot: .clay, materials: materials, robots: robots, blueprint: blueprint, minutes: minutesLeft - latestToBuildGeode - 2)
-    else { return }
+    if state.value.isEmpty { return }
+    var materials = state.key.materials
+    materials[.geode] = 0
+    let robots = state.key.robots
+
     let buildableRobots = getBuildableRobots(materials: materials, blueprint: blueprint)
     for buildableRobot in buildableRobots {
         var materials = materials
@@ -173,13 +175,23 @@ func checkState(_ state: State, withStates states: inout States, andStatesToChec
 
         buildRobot(robot: buildableRobot, materials: &materials, robots: &robots, blueprint: blueprint)
 
-        let key = State(minutesLeft: minutesLeft - 1, materials: materials, robots: robots)
-        if !states.contains(key) {
-            states.insert(key)
-            if key.minutesLeft > 0 {
-                statesToCheck.insert(key)
+        let addedGeodes = materials[.geode]!
+        materials.removeValue(forKey: .geode)
+        let key = StateKey(materials: materials, robots: robots)
+
+        var newValue = states[key] ?? StateValue()
+        var newToCheckValue = statesToCheck[key] ?? StateValue()
+        for (minutesLeft, geodes) in state.value {
+            let oldGeodes = newValue[minutesLeft - 1] ?? -1
+            if oldGeodes < geodes + addedGeodes {
+                newValue[minutesLeft - 1] = geodes + addedGeodes
+                if minutesLeft - 1 > 0 {
+                    newToCheckValue[minutesLeft - 1] = geodes + addedGeodes
+                }
             }
         }
+        states[key] = newValue
+        statesToCheck[key] = newToCheckValue
     }
 }
 
@@ -201,21 +213,6 @@ func getBuildableRobots(materials: [Material: Int], blueprint: Blueprint) -> [Ma
         neighbours.append(nil)
     }
     return neighbours
-}
-
-func canHaveAtLeastOneRobotInMinutes(robot: Material, materials: [Material: Int], robots: [Material: Int], blueprint: Blueprint, minutes: Int) -> Bool {
-    return robots[robot]! > 0 || canBuildRobotInMinutes(robot: robot, materials: materials, robots: robots, blueprint: blueprint, minutes: minutes)
-}
-
-func canBuildRobotInMinutes(robot: Material, materials: [Material: Int], robots: [Material: Int], blueprint: Blueprint, minutes: Int) -> Bool {
-    var materials = materials
-    guard minutes >= 0 else { return false }
-    for _ in 0 ..< minutes {
-        for (material, amount) in robots {
-            materials[material]! += amount
-        }
-    }
-    return canBuildRobot(robot, withMaterials: materials, blueprint: blueprint)
 }
 
 func canBuildRobot(_ robot: Material, withMaterials materials: [Material: Int], blueprint: Blueprint) -> Bool {
@@ -240,11 +237,11 @@ func buildRobot(robot: Material?, materials: inout [Material: Int], robots: inou
 func part1() -> Int {
     var quality = 0
     for blueprint in blueprints {
+        print("===blueprint.id \(blueprint.id)===")
         let materials: [Material: Int] = [
             .ore: 0,
             .clay: 0,
             .obsidian: 0,
-            .geode: 0,
         ]
         let robots: [Material: Int] = [
             .ore: 1,
@@ -254,11 +251,16 @@ func part1() -> Int {
         ]
 
         var statesToCheck = States()
-        statesToCheck.insert(State(minutesLeft: 24, materials: materials, robots: robots))
+        let key = StateKey(materials: materials, robots: robots)
+        var value = StateValue()
+        value[24] = 0
+        statesToCheck[key] = value
 
         let geodes = findMaxPath(withStatesToCheck: &statesToCheck, blueprint: blueprint)
 
         quality += blueprint.id * geodes
+
+        break
     }
     print("total quality \(quality)")
     return quality
